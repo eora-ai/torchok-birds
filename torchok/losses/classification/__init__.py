@@ -1,1 +1,2 @@
 import torchok.losses.classification.binary_cross_entropy
+import torchok.losses.classification.focal_binary_loss

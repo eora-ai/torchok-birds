@@ -5,4 +5,5 @@ import torchok.tasks.triplet_task
 import torchok.tasks.pairwise_task
 import torchok.tasks.detection
 import torchok.tasks.simclr_task
+import torchok.tasks.audio_classification_task
 from torchok.tasks.base import BaseTask
