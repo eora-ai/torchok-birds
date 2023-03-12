@@ -62,8 +62,6 @@ class AttBlockV2(nn.Module):
             return torch.sigmoid(x)
 
 
-
-
 def interpolate(x: torch.Tensor, ratio: int):
     """Interpolate data in time domain. This is used to compensate the
     resolution reduction in downsampling of a CNN.
@@ -98,7 +96,7 @@ def pad_framewise_output(framewise_output: torch.Tensor, frames_num: int):
 
 
 @HEADS.register_class
-class TimmSED(BaseModel):
+class SEDHead(BaseModel):
     def __init__(self, in_channels: int, num_classes: int):
         super().__init__(in_channels, out_channels=num_classes)
 

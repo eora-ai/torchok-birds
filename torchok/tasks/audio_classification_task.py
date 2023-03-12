@@ -103,8 +103,14 @@ class AudioClassificationTask(BaseTask):
         Returns:
             torch.Tensor of shape `(B, num_classes)`, representing logits per each image.
         """
+        print('do forward')
+        print(x.shape)
         x, frames_num = self.preprocess(x)
+        print('after preprocess')
+        print(x.shape)
         x = self.backbone(x)
+        print('after backbone')
+        print(x.shape)
         x = self.head(x, frames_num)["logit"]
         return x
 
@@ -128,6 +134,7 @@ class AudioClassificationTask(BaseTask):
         """
         input_data = batch.get('data')
         target = batch.get('target')
+        # print('do forward with gt!!!!!!!!!!!!!!!!!!!!!1')
         x, frames_num = self.preprocess(input_data)
         x = self.backbone(x)
         output = self.head(x, frames_num)

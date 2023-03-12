@@ -59,7 +59,9 @@ class AudioClassificationDataset(Dataset):
         
         sample = {'index': idx}
         if not self.test_mode:
-            sample['target'] = record[self.target_column]
+            target = np.zeros(self.num_classes, dtype=float)
+            target[record[self.target_column]] = 1.0
+            sample['target'] = target
 
         wav_name = record[self.input_column]
         y, sr = sf.read(self.data_folder / wav_name)
@@ -101,8 +103,8 @@ class AudioClassificationDataset(Dataset):
             sample['index'] - Index of the sample, the same as input `idx`.
         """
         sample = self.get_raw(idx)
-        sample["data"] = self._apply_transform(self.transform, sample)
-        sample["data"] = sample["data"].type(torch.__dict__[self.input_dtype])
+        sample = self._apply_transform(self.transform, sample)
+        sample["data"] = torch.tensor(sample["data"], dtype=torch.__dict__[self.input_dtype])
 
         if not self.test_mode:
             sample['target'] = torch.tensor(sample['target']).type(torch.__dict__[self.target_dtype])

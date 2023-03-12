@@ -12,12 +12,12 @@ class BCEFocalLoss(nn.Module):
         self.alpha = alpha
         self.gamma = gamma
 
-    def forward(self, preds, targets):
+    def forward(self, input, target):
         target = target.float()
-        bce_loss = nn.BCEWithLogitsLoss(reduction='none')(preds, targets)
-        probas = torch.sigmoid(preds)
-        loss = targets * self.alpha * \
+        bce_loss = nn.BCEWithLogitsLoss(reduction='none')(input, target)
+        probas = torch.sigmoid(input)
+        loss = target * self.alpha * \
             (1. - probas)**self.gamma * bce_loss + \
-            (1. - targets) * probas**self.gamma * bce_loss
+            (1. - target) * probas**self.gamma * bce_loss
         loss = loss.mean()
         return loss

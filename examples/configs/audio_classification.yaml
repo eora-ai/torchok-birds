@@ -1,0 +1,123 @@
+task:
+  name: AudioClassificationTask
+  params:
+    preprocess_params:
+      spectrogram_params:
+        n_fft: &n_fft 2048
+        hop_length: 512
+        win_length: *n_fft
+        window: 'hann'
+        center: true
+        pad_mode: 'reflect'
+        freeze_parameters: true
+      logmel_params:
+        sr: 32000
+        n_fft: *n_fft
+        n_mels: 128
+        fmin: 20
+        fmax: 16000
+        ref: 1.0
+        amin: 1e-10
+        freeze_parameters: true
+      spec_aug_params:
+        time_drop_width: 64
+        time_stripes_num: 2
+        freq_drop_width: 8
+        freq_stripes_num: 2
+    backbone_name: resnet18
+    backbone_params:
+      pretrained: false
+      in_channels: 1
+    head_name: SEDHead
+    head_params:
+      num_classes: &num_classes 264
+    inputs:
+      - shape: [640000]
+        dtype: &input_dtype float32
+
+joint_loss:
+  losses:
+    - name: BCEFocalLoss
+      mapping:
+          input: logit
+          target: target
+    - name: BCEFocalLoss
+      mapping:
+          input: clipwise_output_with_max
+          target: target
+
+optimization:
+  - optimizer: 
+      name: Adam
+      params:
+        lr: 0.0001
+    scheduler:
+      name: ExponentialLR
+      params:
+        gamma: 0.97
+
+data:
+  TRAIN:
+    - dataloader:
+        batch_size: 128
+        num_workers: 8
+        drop_last: true
+        shuffle: true
+      dataset:
+        name: AudioClassificationDataset
+        params:
+          input_dtype: *input_dtype
+          data_folder: &data_folder /home/lolik/kaggle/birds/birds-2023/train_audio
+          csv_path: /home/lolik/kaggle/birds/birds-2023/train.csv
+          input_column: filename
+          num_classes: *num_classes
+        transform:
+          - name: AudioMinMaxNormalize
+            params:
+              p: 1.0
+
+trainer:
+  accelerator: 'gpu'
+  max_epochs: 30
+#  limit_train_batches: 10
+#  limit_val_batches: 10
+#  log_every_n_steps: 1000
+  precision: 32
+  num_sanity_val_steps: 0
+
+seed_params:
+  seed: 42
+  workers: true
+
+logger:
+  log_dir: '/home/lolik/kaggle/birds/logs'
+  experiment_name: resnet18
+  timestamp: '${now:%Y-%m-%d}/${now:%H-%M-%S}'
+  name: TensorBoardLogger
+
+hydra:
+  run:
+    dir: &logs_dir '${logger.log_dir}/${logger.experiment_name}/${logger.timestamp}'
+
+callbacks:
+  - name: ModelCheckpoint
+    params:
+      dirpath: *logs_dir
+      monitor: train/F1Score
+      save_top_k: 1
+      save_last: true
+      mode: max
+      save_weights_only: False
+  - name: FinalizeLogger
+  - name: TQDMProgressBar
+    params:
+      refresh_rate: 5
+
+metrics:
+  - name: F1Score
+    params:
+      task: multiclass
+      num_classes: *num_classes
+    mapping:
+      preds: logit
+      target: target
